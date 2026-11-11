@@ -10,7 +10,7 @@ Classic skins (`.wsz`) are locked to a 275×116 px main window and can only be p
 
 ## Downloads
 
-Ready-to-install builds are in [`dist/`](dist/) (skin version 1.22):
+Ready-to-install builds are in [`dist/`](dist/) (skin version 1.24):
 
 | File | Main window | Suggested for |
 |---|---|---|
@@ -36,7 +36,7 @@ Classic details that were reproduced:
 
 - Clock digits use the original Classic digit shapes (9×13, 1 px strokes), redrawn as vectors.
 - Volume, balance and EQ bars are a single colour that follows the slider value (green → yellow → orange → red).
-- Song title scrolls with a `***` separator when it does not fit.
+- Song title always scrolls with a `***` separator, even when it is short enough to fit (as in Classic).
 - Gold seek handle, three-line volume / balance handles.
 
 ## Known gaps

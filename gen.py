@@ -219,9 +219,8 @@ def shade_bg():
     titlebar(c, 0, 275, None, stripes=False)
     c.vgrad(0, 0, 275, 14, TB1, TB2)
     outer_bevel(c, 275, 14)
-    for yy in (4.4, 8.2):
-        c.rect(18, yy, 6, 0.9, GOLD); c.rect(18, yy + 0.9, 6, 0.6, GOLD_D)
-    c.inset(28, 2.6, 96, 8.8)
+    c.text(16, 7.2, "WINAMP", 7.4, (208, 213, 230), "lm")
+    c.inset(51, 2.6, 73, 8.8)
     c.inset(128, 2.6, 34, 8.8)
     c.save("shade.bg")
 
@@ -554,7 +553,7 @@ main = songinfo_def + fill_group("chd.volfill", "VOLUME", None, 62.8, 4.3, "fill
   <text id="timer" display="time" x="{n(36)}" y="{n(26)}" w="{n(64)}" h="{n(13)}" font="chd.numfont" fontsize="{n(13)}" align="right" timecolonwidth="{n(6)}" color="chd.text"/>
   <vis id="vis" x="{n(24)}" y="{n(44)}" w="{n(76)}" h="{n(18)}" {bands} colorbandpeak="150,150,150" {osc}/>
 
-  <Songticker id="songticker" showlen="1" x="{n(111.5)}" y="{n(22.5)}" w="{n(153)}" h="{n(14)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(TFS * S)}" bold="0" antialias="1" ticker="1" tickerstep="{S}" align="left" valign="center" color="chd.text" rightclickaction="trackmenu" dblclickaction="trackinfo"/>
+  <Songticker id="songticker" showlen="1" x="{n(111.5)}" y="{n(22.5)}" w="{n(153)}" h="{n(14)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(TFS * S)}" bold="0" antialias="1" ticker="1" tickerstep="{S}" rightpadding="-{n(133)}" align="left" valign="center" color="chd.text" rightclickaction="trackmenu" dblclickaction="trackinfo"/>
   <group id="chd.songinfo" x="{n(100)}" y="{n(40)}"/>
 
 {fill_use("chd.volfill", 107.6, 60.6, 62.8, 4.3)}
@@ -580,10 +579,10 @@ main = songinfo_def + fill_group("chd.volfill", "VOLUME", None, 62.8, 4.3, "fill
 </layout>
 
 <layout id="shade" background="chd.shade.bg" droptarget="pldr">
-  <layer id="shadegrip" x="{n(16)}" y="0" w="{n(10)}" h="{n(14)}" move="1" rectrgn="1" dblclickaction="SWITCH" dblclickparam="normal"/>
+  <layer id="shadegrip" x="{n(16)}" y="0" w="{n(34)}" h="{n(14)}" move="1" rectrgn="1" dblclickaction="SWITCH" dblclickparam="normal"/>
 {btn("sysmenu", 6, 2.5, "sb.menu", "SYSMENU", tip="Main Menu")}
-  <Songticker id="songticker" showlen="1" x="{n(29)}" y="{n(2.6)}" w="{n(94)}" h="{n(8.8)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(7.6 * S)}" bold="0" antialias="1" ticker="1" tickerstep="{S}" align="left" valign="center" color="chd.text" rightclickaction="trackmenu" dblclickaction="trackinfo"/>
-  <text id="timer" display="time" x="{n(129)}" y="{n(2.6)}" w="{n(32)}" h="{n(8.8)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(7.6 * S)}" bold="0" antialias="1" align="center" valign="center" color="chd.text"/>
+  <vis id="shadevis" x="{n(52)}" y="{n(3.2)}" w="{n(71)}" h="{n(7.6)}" mode="1" {bands} colorbandpeak="150,150,150" {osc}/>
+  <text id="timer" display="time" x="{n(125)}" y="{n(4)}" w="{n(40)}" h="{n(SH)}" font="chd.smallnum" fontsize="{n(SH)}" align="center" valign="top" color="chd.text"/>
 {btn("prev", 168, 2.5, "sb.prev", "PREV", tip="Previous")}
 {btn("play", 178, 2.5, "sb.play", "PLAY", tip="Play")}
 {btn("pause", 188, 2.5, "sb.pause", "PAUSE", tip="Pause")}
@@ -709,7 +708,7 @@ w("skin.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <WasabiXML version="1.35">
 
   <skininfo>
-    <version>1.22</version>
+    <version>1.24</version>
     <name>{NAME}</name>
     <comment>The Classic Winamp layout redrawn at {S}x for high-resolution displays ({275 * S}x{116 * S} main window).</comment>
     <author>Claude</author>
