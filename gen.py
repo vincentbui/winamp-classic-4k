@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Classic HD - generator for a Winamp freeform (.wal) skin that recreates the
 Classic 275x116 layout with natively drawn hi-res artwork.
-usage: gen.py <scale> <outdir>"""
+usage: gen.py <scale> <outdir> [default|purple]"""
 import os, sys, zipfile, shutil
 from PIL import Image, ImageDraw, ImageFont
 
 S = float(sys.argv[1])
 S = int(S) if S == int(S) else S   # 2, 3, 4 ... or fractional like 1.5
 OUT = sys.argv[2]
+THEME = sys.argv[3] if len(sys.argv) > 3 else "default"
+if THEME not in ("default", "purple"):
+    sys.exit(f"error: unknown theme {THEME!r} (expected 'default' or 'purple')")
 AA = 4
 K = S * AA
-NAME = f"Classic HD x{S}"
+NAME = f"Classic HD x{S}" if THEME == "default" else f"Classic HD Purple x{S}"
 ROOT = os.path.join(OUT, NAME)
 IMG = os.path.join(ROOT, "img")
 XML = os.path.join(ROOT, "xml")
@@ -43,6 +46,34 @@ INK = (18, 21, 36)
 LABEL = (168, 174, 198)
 GREEN = (0, 232, 0)
 BLACK = (0, 0, 0)
+# chrome colours that are not part of the main bevel palette
+SIDE = (44, 46, 62)          # window frame sides / list column background
+WINBG = (38, 40, 56)         # wasabi window background
+TTEXT = (208, 213, 230)      # title / list text
+BLO_P = (196, 202, 220)      # pressed-button low edge
+LEDBG = (20, 24, 34)         # led bezel
+CHLBL = (96, 104, 132)       # display channel letters (OAIDV)
+TICK = (30, 34, 50)          # seek ticks
+DIVID = (30, 34, 48)         # display divider
+DIM = (74, 82, 108)          # inactive mono/stereo indicator
+DIMTXT = (110, 116, 140)     # wasabi.button.dimmedText
+SELINACT = (40, 44, 96)      # inactive list selection
+if THEME == "purple":
+    # Only the chrome changes: body, title bars, frames, bevels and menu/window
+    # colours become the violet-grey of the Classic base skin. Buttons, slider
+    # handles, LEDs and text keep the default colours.
+    BODY1, BODY2 = (57, 57, 90), (20, 20, 31)   # sampled from the Classic base skin
+    TB1, TB2 = (62, 60, 96), (38, 37, 60)
+    HI = (117, 116, 139)
+    SIDE = (41, 40, 64)
+    WINBG = (56, 55, 87)          # menu / window background in the Classic screenshot
+    CHLBL = (100, 98, 136)
+    TICK = (34, 33, 54)
+    DIVID = (34, 33, 52)
+    DIM = (80, 78, 112)
+    DIMTXT = (116, 114, 146)
+    SELINACT = (52, 48, 104)
+def rgb(t): return ",".join(map(str, t))
 
 IMAGES = {}   # id -> (file, w, h) in classic units
 
@@ -121,7 +152,7 @@ def titlebar(c, x, w, title=None, h=14, tx=None, stripes=True, size=7.6):
     if title:
         tw = c.tw(title, size)
         if tx is None: tx = x + (w - tw) / 2
-        c.text(tx, h / 2 + 0.3, title, size, (208, 213, 230), "lm")
+        c.text(tx, h / 2 + 0.3, title, size, TTEXT, "lm")
         spans = [(x + 20, tx - 5), (tx + tw + 5, x + w - 36)]
     if stripes:
         for a, b in spans:
@@ -138,7 +169,7 @@ def button(key, w, h, draw_icon, states=("", ".h", ".p")):
     for st in states:
         c = Cv(w, h)
         if st == ".p":
-            c.raised(0, 0, w, h, BTNP1, BTNP2, hi=BLO, lo=(196, 202, 220)); off = 0.6
+            c.raised(0, 0, w, h, BTNP1, BTNP2, hi=BLO, lo=BLO_P); off = 0.6
         elif st == ".h":
             c.raised(0, 0, w, h, BTNH1, BTNH2); off = 0
         else:
@@ -150,14 +181,14 @@ def led_button(key, w, h, label, size, lx=3.2, lw=3.6, lh=4):
     for st, on in (("", False), (".h", False), (".p", False), (".on", True)):
         c = Cv(w, h)
         if st == ".p":
-            c.raised(0, 0, w, h, BTNP1, BTNP2, hi=BLO, lo=(196, 202, 220)); off = 0.6
+            c.raised(0, 0, w, h, BTNP1, BTNP2, hi=BLO, lo=BLO_P); off = 0.6
         elif st == ".h":
             c.raised(0, 0, w, h, BTNH1, BTNH2); off = 0
         else:
             c.raised(0, 0, w, h, BTN1, BTN2); off = 0
         lx = (w - (lw + 2 + c.tw(label, size))) / 2   # centre LED + label as one group
         ly = (h - lh) / 2 + off
-        c.rect(lx - 0.5 + off, ly - 0.5, lw + 1, lh + 1, (20, 24, 34))
+        c.rect(lx - 0.5 + off, ly - 0.5, lw + 1, lh + 1, LEDBG)
         c.vgrad(lx + off, ly, lw, lh, (150, 255, 150) if on else (52, 78, 56), (0, 214, 0) if on else (26, 42, 30))
         c.text(lx + lw + 2 + off, h / 2 + 0.2 + off, label, size, INK, "lm")
         c.save(key + st)
@@ -191,17 +222,23 @@ def small_button(key, kind):
             c.poly([(2.4 + o, 5 + o), (6.6 + o, 5 + o), (4.5 + o, 2.2 + o)], INK); c.rect(2.4 + o, 5.7 + o, 4.2, 1, INK)
     button(key, 9, 9, ic)
 
+def body_sheen(c, w=275, h=116):
+    """Classic's body shading runs left-to-right, not top-to-bottom: dark at the
+    left edge, brightest about 62% across, then falling off again to the right."""
+    right = tuple(round(a + (b - a) * 0.6) for a, b in zip(BODY2, BODY1))
+    c.hstops(0, 0, w, h, [(0, BODY2), (0.62, BODY1), (1, right)])
+
 # ---------------------------------------------------------------- main window
 def main_bg():
     c = Cv(275, 116)
-    c.vgrad(0, 0, 275, 116, BODY1, BODY2)
+    body_sheen(c)
     titlebar(c, 0, 275, "WINAMP")
     outer_bevel(c, 275, 116)
     # display panel
     c.inset(9, 22, 93, 43)
     for i, ch in enumerate("OAIDV"):
-        c.text(14.5, 26.5 + i * 8.2, ch, 5.2, (96, 104, 132), "mm")
-    c.rect(19.6, 23, 0.5, 41, (30, 34, 48))
+        c.text(14.5, 26.5 + i * 8.2, ch, 5.2, CHLBL, "mm")
+    c.rect(19.6, 23, 0.5, 41, DIVID)
     # song title, kbps, khz
     c.inset(110, 22.5, 156, 14)
     c.inset(110, 41, 26, 10); c.text(138.5, 46.3, "kbps", 6.2, LABEL, "lm")
@@ -212,7 +249,7 @@ def main_bg():
     # seek groove
     c.inset(16, 73, 248, 8, (8, 8, 14))
     for i in range(0, 248, 4):
-        c.rect(16.8 + i, 76.6, 1.6, 0.8, (30, 34, 50))
+        c.rect(16.8 + i, 76.6, 1.6, 0.8, TICK)
     c.save("main.bg")
 
 def shade_bg():
@@ -220,7 +257,7 @@ def shade_bg():
     titlebar(c, 0, 275, None, stripes=False)
     c.vgrad(0, 0, 275, 14, TB1, TB2)
     outer_bevel(c, 275, 14)
-    c.text(16, 7.2, "WINAMP", 7.4, (208, 213, 230), "lm")
+    c.text(16, 7.2, "WINAMP", 7.4, TTEXT, "lm")
     c.inset(51, 2.6, 73, 8.8)
     c.inset(128, 2.6, 34, 8.8)
     c.save("shade.bg")
@@ -262,7 +299,7 @@ def thumbs():
         c.rrect(4, 3, 21, 4, 1.2, (96, 70, 28)); c.rrect(4.6, 3.6, 19.8, 2.8, 0.8, g1 if st != ".p" else g2)
         c.save("thumb.seek" + st)
         c = Cv(11, 11); c.raised(0, 0, 11, 11, a, b)
-        c.rect(2.6, 4.9, 5.8, 1.2, INK); c.save("thumb.eq" + st)
+        [c.rect(2.8, yy, 5.4, 1.0, INK) for yy in (2.9, 5.0, 7.1)]; c.save("thumb.eq" + st)
 
 def status():
     c = Cv(9, 9); c.poly([(1.5, 0.6), (1.5, 8.4), (8, 4.5)], GREEN); c.save("st.play")
@@ -306,7 +343,7 @@ EQX = [21] + [78 + 18 * i for i in range(10)]
 EQL = ["PREAMP", "60", "170", "310", "600", "1K", "3K", "6K", "12K", "14K", "16K"]
 def eq_bg():
     c = Cv(275, 116)
-    c.vgrad(0, 0, 275, 116, BODY1, BODY2)
+    body_sheen(c)
     titlebar(c, 0, 275, "WINAMP EQUALIZER")
     outer_bevel(c, 275, 116)
     for x, lab in zip(EQX, EQL):
@@ -335,7 +372,7 @@ def frame(prefix, title, hb):
     c = Cv(24, TOP_H); c.vgrad(0, 0, 24, TOP_H, TB1, TB2); c.rect(0, TOP_H - 0.6, 24, 0.6, LO)
     c.rect(0, 0, 24, 0.75, HI); c.rect(24 - 0.75, 0, 0.75, TOP_H, LO); c.save(prefix + ".tr")
     # sides
-    side = (44, 46, 62)
+    side = SIDE
     c = Cv(SIDE_W, 8); c.rect(0, 0, SIDE_W, 8, side); c.rect(0, 0, 0.75, 8, HI); c.rect(SIDE_W - 0.6, 0, 0.6, 8, LO); c.save(prefix + ".l")
     c = Cv(SIDE_W, 8); c.rect(0, 0, SIDE_W, 8, side); c.rect(SIDE_W - 0.75, 0, 0.75, 8, LO); c.rect(0, 0, 0.6, 8, HI); c.save(prefix + ".r")
     # bottom
@@ -426,7 +463,6 @@ def smallnum():
     c.rect(19 * SW + 1, SH + 3, 3, 1, GREEN); c.rect(19 * SW + 2, SH + 2, 1, 3, GREEN)
     c.poly([(21 * SW + 3.2, SH), (21 * SW + 4.2, SH), (21 * SW + 1.8, SH + 6), (21 * SW + 0.8, SH + 6)], GREEN)
     c.save("smallnum", (31 * int(n(SW)), 3 * int(n(SH))))   # exact cell grid, also at fractional scales
-DIM = (74, 82, 108)
 def channels():
     for key, (m, st) in {"none": (DIM, DIM), "mono": (GREEN, DIM), "stereo": (DIM, GREEN), "surround": (GREEN, GREEN)}.items():
         c = Cv(56, 10)
@@ -459,10 +495,10 @@ el.append(f'  <bitmapfont id="chd.smallnum" file="chd.smallnum" charwidth="{n(SW
 for _k in ("none", "mono", "stereo", "surround"):   # ids expected by the stock songinfo script
     _im = IMAGES["ch." + _k][3]
     el.append(f'  <bitmap id="player.songinfo.{_k}" file="img/ch.{_k}.png" x="0" y="0" w="{_im.size[0]}" h="{_im.size[1]}"/>')
-el.append("""
+el.append(f"""
   <color id="chd.text" value="0,232,0"/>
-  <color id="chd.titletext" value="208,213,230"/>
-  <color id="chd.label" value="168,174,198"/>
+  <color id="chd.titletext" value="{rgb(TTEXT)}"/>
+  <color id="chd.label" value="{rgb(LABEL)}"/>
 
   <color id="wasabi.list.text" value="0,232,0"/>
   <color id="wasabi.list.background" value="0,0,0"/>
@@ -474,23 +510,23 @@ el.append("""
   <color id="studio.list.item.focused" value="0,0,198"/>
   <color id="wasabi.list.text.current" value="255,255,255"/>
   <color id="wasabi.list.text.selected.inactive" value="255,255,255"/>
-  <color id="wasabi.list.text.selected.background.inactive" value="40,44,96"/>
-  <color id="wasabi.list.column.background" value="44,46,62"/>
-  <color id="wasabi.list.column.text" value="208,213,230"/>
-  <color id="wasabi.list.column.frame.top" value="136,140,168"/>
-  <color id="wasabi.list.column.frame.middle" value="44,46,62"/>
-  <color id="wasabi.list.column.frame.bottom" value="9,9,16"/>
-  <color id="wasabi.list.column.empty" value="44,46,62"/>
-  <color id="wasabi.window.background" value="38,40,56"/>
-  <color id="wasabi.window.text" value="208,213,230"/>
-  <color id="wasabi.border.sunken" value="136,140,168"/>
-  <color id="wasabi.scrollbar.foreground" value="118,126,150"/>
+  <color id="wasabi.list.text.selected.background.inactive" value="{rgb(SELINACT)}"/>
+  <color id="wasabi.list.column.background" value="{rgb(SIDE)}"/>
+  <color id="wasabi.list.column.text" value="{rgb(TTEXT)}"/>
+  <color id="wasabi.list.column.frame.top" value="{rgb(HI)}"/>
+  <color id="wasabi.list.column.frame.middle" value="{rgb(SIDE)}"/>
+  <color id="wasabi.list.column.frame.bottom" value="{rgb(LO)}"/>
+  <color id="wasabi.list.column.empty" value="{rgb(SIDE)}"/>
+  <color id="wasabi.window.background" value="{rgb(WINBG)}"/>
+  <color id="wasabi.window.text" value="{rgb(TTEXT)}"/>
+  <color id="wasabi.border.sunken" value="{rgb(HI)}"/>
+  <color id="wasabi.scrollbar.foreground" value="{rgb(BTN2)}"/>
   <color id="wasabi.scrollbar.background" value="0,0,0"/>
   <color id="wasabi.scrollbar.foreground.inverted" value="0,0,0"/>
   <color id="wasabi.scrollbar.background.inverted" value="0,0,0"/>
-  <color id="wasabi.button.text" value="18,21,36"/>
-  <color id="wasabi.button.hiliteText" value="18,21,36"/>
-  <color id="wasabi.button.dimmedText" value="110,116,140"/>
+  <color id="wasabi.button.text" value="{rgb(INK)}"/>
+  <color id="wasabi.button.hiliteText" value="{rgb(INK)}"/>
+  <color id="wasabi.button.dimmedText" value="{rgb(DIMTXT)}"/>
 </elements>
 """)
 w("xml/elements.xml", "\n".join(el))
@@ -790,7 +826,7 @@ def tile(key, x0, y0, wpx, hpx):
 paste(pv, "pl.tl", 0, oy); tile("pl.t", 8 * S, oy * S, (275 - 32) * S, TOP_H * S); paste(pv, "pl.tr", 251, oy)
 _ft = ImageFont.truetype(FONT, round(8.4 * S)); _tw = _ft.getlength("WINAMP PLAYLIST"); _tx = (W - _tw) / 2
 tile("streak", 5 * S, oy * S, round(_tx) - 10 * S, TOP_H * S); tile("streak", round(_tx + _tw) + 5 * S, oy * S, W - 22 * S - round(_tx + _tw) - 5 * S, TOP_H * S)
-ImageDraw.Draw(pv).text((_tx, (oy + TOP_H / 2 + 0.3) * S), "WINAMP PLAYLIST", font=_ft, fill=(208, 213, 230), anchor="lm")
+ImageDraw.Draw(pv).text((_tx, (oy + TOP_H / 2 + 0.3) * S), "WINAMP PLAYLIST", font=_ft, fill=TTEXT, anchor="lm")
 tile("pl.l", 0, (oy + TOP_H) * S, SIDE_W * S, (232 - TOP_H - 30) * S); tile("pl.r", (275 - SIDE_W) * S, (oy + TOP_H) * S, SIDE_W * S, (232 - TOP_H - 30) * S)
 paste(pv, "pl.bl", 0, oy + 202); tile("pl.b", SIDE_W * S, (oy + 202) * S, (275 - SIDE_W - 22) * S, 30 * S); paste(pv, "pl.br", 253, oy + 202)
 paste(pv, "sb.close", 260, oy + 5.5)

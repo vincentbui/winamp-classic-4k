@@ -19,6 +19,8 @@ Ready-to-install builds are in [`dist/`](dist/) (skin version 1.24):
 | `Classic HD x3.wal` | 825×348 | 4K |
 | `Classic HD x4.wal` | 1100×464 | 4K |
 
+**Purple theme:** every size also comes as `Classic HD Purple x<scale>.wal`, a violet colour scheme closer to the original Winamp 2.x base skin. Install it next to the default one and switch under **Options → Skins**.
+
 ## Install
 
 1. Double-click a `.wal` file and confirm the "install this Winamp Skin?" prompt, **or** copy it into `C:\Program Files (x86)\Winamp\Skins`.
@@ -58,6 +60,8 @@ python3 gen.py <scale> <outdir>
 # e.g. build all four sizes (fractional scales such as 1.5 work)
 for s in 1.5 2 3 4; do python3 gen.py $s out; done
 ```
+
+Add `purple` as a third argument for the purple theme, e.g. `python3 gen.py 2 out purple`.
 
 Each run writes `out/Classic HD x<scale>/` (unpacked skin), `out/Classic HD x<scale>.wal` (installable) and `out/preview_x<scale>.png`.
 
