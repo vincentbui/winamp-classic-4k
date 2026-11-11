@@ -5,7 +5,8 @@ usage: gen.py <scale> <outdir>"""
 import os, sys, zipfile, shutil
 from PIL import Image, ImageDraw, ImageFont
 
-S = int(sys.argv[1])
+S = float(sys.argv[1])
+S = int(S) if S == int(S) else S   # 2, 3, 4 ... or fractional like 1.5
 OUT = sys.argv[2]
 AA = 4
 K = S * AA
@@ -94,8 +95,8 @@ class Cv:
         s.rect(x - t, y - t, w + 2 * t, h + 2 * t, HI)
         s.rect(x - t, y - t, w + t, h + t, LO)
         s.rect(x, y, w, h, fill)
-    def save(s, key):
-        im = s.im.resize((round(s.w * S), round(s.h * S)), Image.LANCZOS)
+    def save(s, key, size=None):
+        im = s.im.resize(size or (round(s.w * S), round(s.h * S)), Image.LANCZOS)
         fn = key + ".png"
         im.save(os.path.join(IMG, fn), optimize=True)
         IMAGES[key] = (fn, s.w, s.h, im)
@@ -298,7 +299,7 @@ def numfont():
     ox = 12 * CW                      # ':' (left aligned in its cell)
     c.rect(ox + 2, CH + 4, 1, 1, GREEN); c.rect(ox + 2, CH + 8, 1, 1, GREEN)
     c.rect(15 * CW + 2, CH + 6, 7, 1, GREEN)   # '-'
-    c.save("numfont")
+    c.save("numfont", (31 * int(n(CW)), 3 * int(n(CH))))   # exact cell grid, also at fractional scales
 
 # ---------------------------------------------------------------- equalizer
 EQX = [21] + [78 + 18 * i for i in range(10)]
@@ -411,7 +412,7 @@ def plnum():
     c.rect(cell(15) + 1, PH + 5, 4, 1, GREEN)                                        # -
     c.rect(cell(19) + 1, PH + 5, 4, 1, GREEN); c.rect(cell(19) + 2.5, PH + 3.5, 1, 4, GREEN)           # +
     c.poly([(cell(21) + 4.4, PH + 0.5), (cell(21) + 5.4, PH + 0.5), (cell(21) + 1.6, PH + 10.5), (cell(21) + 0.6, PH + 10.5)], GREEN)  # /
-    c.save("plnum")
+    c.save("plnum", (31 * int(n(PW)), 3 * int(n(PH))))   # exact cell grid, also at fractional scales
 def smallnum():
     c = Cv(SW * 31, SH * 3)
     for dgt, rows in SMALL_DIGITS.items():
@@ -424,7 +425,7 @@ def smallnum():
     c.rect(15 * SW + 1, SH + 3, 3, 1, GREEN)
     c.rect(19 * SW + 1, SH + 3, 3, 1, GREEN); c.rect(19 * SW + 2, SH + 2, 1, 3, GREEN)
     c.poly([(21 * SW + 3.2, SH), (21 * SW + 4.2, SH), (21 * SW + 1.8, SH + 6), (21 * SW + 0.8, SH + 6)], GREEN)
-    c.save("smallnum")
+    c.save("smallnum", (31 * int(n(SW)), 3 * int(n(SH))))   # exact cell grid, also at fractional scales
 DIM = (74, 82, 108)
 def channels():
     for key, (m, st) in {"none": (DIM, DIM), "mono": (GREEN, DIM), "stereo": (DIM, GREEN), "surround": (GREEN, GREEN)}.items():
@@ -553,7 +554,7 @@ main = songinfo_def + fill_group("chd.volfill", "VOLUME", None, 62.8, 4.3, "fill
   <text id="timer" display="time" x="{n(36)}" y="{n(26)}" w="{n(64)}" h="{n(13)}" font="chd.numfont" fontsize="{n(13)}" align="right" timecolonwidth="{n(6)}" color="chd.text"/>
   <vis id="vis" x="{n(24)}" y="{n(44)}" w="{n(76)}" h="{n(18)}" {bands} colorbandpeak="150,150,150" {osc}/>
 
-  <Songticker id="songticker" showlen="1" x="{n(111.5)}" y="{n(22.5)}" w="{n(153)}" h="{n(14)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(TFS * S)}" bold="0" antialias="1" ticker="1" tickerstep="{S}" rightpadding="-{n(133)}" align="left" valign="center" color="chd.text" rightclickaction="trackmenu" dblclickaction="trackinfo"/>
+  <Songticker id="songticker" showlen="1" x="{n(111.5)}" y="{n(22.5)}" w="{n(153)}" h="{n(14)}" font="Arial Unicode MS" altfont="Arial" fontsize="{round(TFS * S)}" bold="0" antialias="1" ticker="1" tickerstep="{max(1, round(S))}" rightpadding="-{n(133)}" align="left" valign="center" color="chd.text" rightclickaction="trackmenu" dblclickaction="trackinfo"/>
   <group id="chd.songinfo" x="{n(100)}" y="{n(40)}"/>
 
 {fill_use("chd.volfill", 107.6, 60.6, 62.8, 4.3)}
@@ -710,7 +711,7 @@ w("skin.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <skininfo>
     <version>1.24</version>
     <name>{NAME}</name>
-    <comment>The Classic Winamp layout redrawn at {S}x for high-resolution displays ({275 * S}x{116 * S} main window).</comment>
+    <comment>The Classic Winamp layout redrawn at {S}x for high-resolution displays ({round(275 * S)}x{round(116 * S)} main window).</comment>
     <author>Claude</author>
     <screenshot>screenshot.png</screenshot>
   </skininfo>
@@ -724,11 +725,16 @@ w("skin.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 """)
 
 # ---------------------------------------------------------------- preview / screenshot
+# fractional scales give float pixel coordinates below; round them at the PIL boundary
+_ac, _cr, _rs = Image.Image.alpha_composite, Image.Image.crop, Image.Image.resize
+Image.Image.alpha_composite = lambda self, im, dest=(0, 0), source=(0, 0): _ac(self, im, tuple(round(v) for v in dest), source)
+Image.Image.crop = lambda self, box=None: _cr(self, None if box is None else tuple(round(v) for v in box))
+Image.Image.resize = lambda self, size, *a, **k: _rs(self, tuple(max(1, round(v)) for v in size), *a, **k)
 def I(key): return IMAGES[key][3]
 def paste(dst, key, x, y, ox=0, oy=0):
     im = I(key); dst.alpha_composite(im, (ox + round(x * S), oy + round(y * S)))
 
-W, H = 275 * S, 116 * S
+W, H = round(275 * S), round(116 * S)
 pv = Image.new("RGBA", (W, H * 4), (0, 0, 0, 255))
 paste(pv, "main.bg", 0, 0)
 def fillrect(x, y, w, h, col):

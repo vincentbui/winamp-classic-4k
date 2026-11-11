@@ -1,6 +1,6 @@
 # Winamp Classic HD (2K / 4K)
 
-The Classic Winamp look, redrawn at 2×, 3× and 4× so it stays sharp on 1440p and 4K displays.
+The Classic Winamp look, redrawn at 1.5×, 2×, 3× and 4× so it stays sharp on 1440p and 4K displays.
 
 Classic skins (`.wsz`) are locked to a 275×116 px main window and can only be pixel-doubled. This project rebuilds the same layout as a **Modern (freeform) skin** (`.wal`), with every bitmap rendered natively at the target size.
 
@@ -14,8 +14,9 @@ Ready-to-install builds are in [`dist/`](dist/) (skin version 1.24):
 
 | File | Main window | Suggested for |
 |---|---|---|
-| `Classic HD x2.wal` | 550×232 | 1440p |
-| `Classic HD x3.wal` | 825×348 | 1440p (large) or 4K |
+| `Classic HD x1.5.wal` | 413×174 | 1440p |
+| `Classic HD x2.wal` | 550×232 | 1440p (large) or 4K (small) |
+| `Classic HD x3.wal` | 825×348 | 4K |
 | `Classic HD x4.wal` | 1100×464 | 4K |
 
 ## Install
@@ -54,8 +55,8 @@ Requirements: Python 3, [Pillow](https://python-pillow.org/), and Liberation San
 
 ```sh
 python3 gen.py <scale> <outdir>
-# e.g. build all three sizes
-for s in 2 3 4; do python3 gen.py $s out; done
+# e.g. build all four sizes (fractional scales such as 1.5 work)
+for s in 1.5 2 3 4; do python3 gen.py $s out; done
 ```
 
 Each run writes `out/Classic HD x<scale>/` (unpacked skin), `out/Classic HD x<scale>.wal` (installable) and `out/preview_x<scale>.png`.
