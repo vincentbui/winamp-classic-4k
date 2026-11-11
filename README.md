@@ -10,7 +10,7 @@ Classic skins (`.wsz`) are locked to a 275×116 px main window and can only be p
 
 ## Downloads
 
-Ready-to-install builds are in [`dist/`](dist/) (skin version 1.24). Each size comes in both themes:
+Ready-to-install builds are in [`dist/`](dist/) (skin version 1.25). Each size comes in both themes:
 
 | Size | Default theme | Purple theme | Main window | Suggested for |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ Ready-to-install builds are in [`dist/`](dist/) (skin version 1.24). Each size c
 1. Double-click a `.wal` file and confirm the "install this Winamp Skin?" prompt, **or** copy it into `C:\Program Files (x86)\Winamp\Skins`.
 2. Pick it under **Options → Skins**. Both themes and all sizes can be installed side by side.
 
-Developed and tested on **Winamp 5.8 (build 3660)** on Windows 11. It needs the Modern skin engine (`gen_ff.dll`), which ships with Winamp 5.x.
+Developed on **Winamp 5.8 (build 3660)** and tested on **Winamp 5.9.2** on Windows 11. It needs the Modern skin engine (`gen_ff.dll`), which ships with Winamp 5.x.
 
 ## Themes
 
@@ -36,7 +36,7 @@ Developed and tested on **Winamp 5.8 (build 3660)** on Windows 11. It needs the 
 - **Main window** – Classic layout: clock, visualizer, scrolling song title, kbps / kHz, mono / stereo, volume, balance, seek bar, transport, shuffle / repeat, EQ / PL toggles.
 - **Windowshade mode** – `WINAMP` label, a small spectrum visualizer, pixel-digit clock and transport buttons.
 - **Equalizer** – preamp + 10 bands, ON / AUTO / PRESETS.
-- **Playlist** – resizable, ADD / REM / SEL / MISC / LIST, total-time readout, centred title.
+- **Playlist** – resizable, Classic bottom corners: tabbed ADD / REM / SEL / MISC buttons, LIST OPTS, time readout, gold mini transport, double frame rings around the window and the list, centred title.
 - **Library, Video, Visualization** – resizable frames in the same style.
 
 Classic details that were reproduced:
@@ -54,6 +54,7 @@ Classic details that were reproduced:
 - No EQ curve graph; the O-A-I-D-V letters are decorative.
 - Playlist has no windowshade mode.
 - The playlist's track list is drawn by Winamp itself; its font size is set in **Preferences → Playlist**, not by the skin.
+- The playlist scrollbar is Winamp's own (no gold Classic thumb). Winamp 5.9 ignores scrollbar images from the skin there, even with *Use freeform scrollbars* enabled.
 - kbps / kHz digits are centred in their boxes rather than right-aligned.
 - Video and Visualization windows, and window resizing, have had little testing.
 

@@ -391,18 +391,54 @@ def frame(prefix, title, hb):
         if left: c.rect(0, 0, 0.75, hb, HI)
         if right:
             c.rect(w - 0.75, 0, 0.75, hb, LO)
-            for i in range(3):
-                o = 3 + i * 3
-                c.line(w - 2.2, hb - 2.2 - o, w - 2.2 - o, hb - 2.2, HI, 0.8)
-                c.line(w - 2.2, hb - 1.4 - o, w - 1.4 - o, hb - 2.2, LO, 0.6)
+            for i in range(6):
+                o = 2 + i * 1.8
+                c.line(w - 1.6, hb - 1.6 - o, w - 1.6 - o, hb - 1.6, HI, 0.6)
+                c.line(w - 1.6, hb - 0.9 - o, w - 0.9 - o, hb - 1.6, LO, 0.5)
         return c
     bottom(SIDE_W, left=True).save(prefix + ".bl")
     bottom(64, centre=True).save(prefix + ".b")
     bottom(22, right=True).save(prefix + ".br")
 
+PL_HB = 38   # Classic playlist bottom bar height
+def tab_button(key, w, h, label, size=5.8, lines=None):
+    """Classic playlist button: a narrow raised tab on the left, then the button face."""
+    tw = 2.6
+    for st in ("", ".h", ".p"):
+        c = Cv(w, h)
+        c.raised(0, 1, tw, h - 2, BTN1, BTN2, t=0.5)   # tab strip
+        if st == ".p":
+            c.raised(tw + 0.6, 0, w - tw - 0.6, h, BTNP1, BTNP2, hi=BLO, lo=BLO_P); o = 0.6
+        elif st == ".h":
+            c.raised(tw + 0.6, 0, w - tw - 0.6, h, BTNH1, BTNH2); o = 0
+        else:
+            c.raised(tw + 0.6, 0, w - tw - 0.6, h, BTN1, BTN2); o = 0
+        cx = tw + 0.6 + (w - tw - 0.6) / 2 + o
+        if lines:
+            c.text(cx, h / 2 - 3.2 + o, lines[0], size, INK, "mm"); c.text(cx, h / 2 + 3.4 + o, lines[1], size, INK, "mm")
+        else:
+            c.text(cx, h / 2 + 0.2 + o, label, size, INK, "mm")
+        c.save(key + st)
+
+def gold_transport():
+    """Classic playlist mini transport: small gold glyphs without button faces."""
+    shades = {"": (222, 190, 120), ".h": (255, 226, 160), ".p": (170, 136, 70)}
+    for st, g in shades.items():
+        for kind in ("prev", "play", "pause", "stop", "next", "eject"):
+            c = Cv(8, 8)
+            if kind == "prev":  c.rect(1, 1.5, 1.4, 5, g); c.poly([(7, 1.2), (7, 6.8), (2.6, 4)], g)
+            if kind == "next":  c.rect(5.6, 1.5, 1.4, 5, g); c.poly([(1, 1.2), (1, 6.8), (5.4, 4)], g)
+            if kind == "play":  c.poly([(1.6, 1), (1.6, 7), (6.8, 4)], g)
+            if kind == "pause": c.rect(1.4, 1.2, 2, 5.6, g); c.rect(4.6, 1.2, 2, 5.6, g)
+            if kind == "stop":  c.rect(1.4, 1.4, 5.2, 5.2, g)
+            if kind == "eject": c.poly([(1, 4.4), (7, 4.4), (4, 1)], g); c.rect(1, 5.4, 6, 1.4, g)
+            c.save(f"pt.{kind}{st}")
+
 def misc():
     c = Cv(8, 8, (0, 0, 0, 255)); c.save("black")
     c = Cv(88, 16); c.inset(1, 1, 86, 14); c.save("pl.info")
+    c = Cv(90, 12); c.inset(1, 1, 88, 10); c.save("pl.timebox")
+    c = Cv(30, 11); c.inset(1, 1, 28, 9); c.save("pl.smallbox")
 
 # ---------------------------------------------------------------- classic-style value fills
 # Classic colours the WHOLE bar by the slider value. Done without scripts: a ghost slider
@@ -483,7 +519,11 @@ text_button("eq.presets", 44, 12, "PRESETS", 6)
 for lab in ("ADD", "REM", "SEL", "MISC", "LIST", "FULL", "1X", "2X", "PREV", "NEXT", "MENU"):
     text_button("tb." + lab.lower(), 28, 16, lab)
 streak()
-frame("pl", "WINAMP PLAYLIST", 30)
+frame("pl", "WINAMP PLAYLIST", PL_HB)
+for _k, _l in (("add", "ADD"), ("rem", "REM"), ("sel", "SEL"), ("misc", "MISC")):
+    tab_button("tp." + _k, 25, 18, _l)
+tab_button("tp.list", 25, 20, "", 5.6, ("LIST", "OPTS"))
+gold_transport()
 frame("ml", "WINAMP LIBRARY", 12)
 frame("vid", "WINAMP VIDEO", 30)
 frame("vis", "VISUALIZATION", 30)
@@ -679,6 +719,25 @@ def title_group(prefix):
   <script id="titlebar" file="scripts/titlebar.maki" param="wasabi.titlebar.streak.left;window.titlebar.title;wasabi.titlebar.streak.right"/>
 </groupdef>
 """
+def rings(hb):
+    """Classic frames have two light rings: one just inside the window edge and one
+    hugging the list area, each with a dark line beside it."""
+    hi, lo = rgb(HI), rgb(LO)
+    t = 0.75
+    def box(x, y, rx, ry, col):   # four thin rect elements forming a rectangle outline
+        return "".join([
+            f'  <rect x="{n(x)}" y="{n(y)}" w="{n(-x + rx)}" h="{max(1, round(t * S))}" relatw="1" color="{col}" filled="1" ghost="1"/>\n',
+            f'  <rect x="{n(x)}" y="{n(ry)}" w="{n(-x + rx)}" h="{max(1, round(t * S))}" relatw="1" relaty="1" color="{col}" filled="1" ghost="1"/>\n',
+            f'  <rect x="{n(x)}" y="{n(y)}" w="{max(1, round(t * S))}" h="{n(-y + ry)}" relath="1" color="{col}" filled="1" ghost="1"/>\n',
+            f'  <rect x="{n(rx)}" y="{n(y)}" w="{max(1, round(t * S))}" h="{n(-y + ry)}" relatx="1" relath="1" color="{col}" filled="1" ghost="1"/>\n'])
+    # outer ring 1.5 in from the window edge
+    out = box(1.5, 1.5, -2.25, -2.25, lo) + box(2.25, 2.25, -3.0, -3.0, hi)
+    # ring around the list: dark just outside, light one step further out
+    lx, ly = SIDE_W, TOP_H
+    out += box(lx - 2.6, ly - 2.6, -(lx - 2.6) - t, -hb + 2.6 - t, hi)
+    out += box(lx - 1.6, ly - 1.6, -(lx - 1.6) - t, -hb + 1.6 - t, lo)
+    return out
+
 def frame_xml(cid, name, guid, prefix, hb, comp, bottom, dx, dy, lw, lh, vis="1", holder=None):
     if holder is None:
         holder = (f'<component x="{n(SIDE_W)}" y="{n(TOP_H)}" w="{n(-2 * SIDE_W)}" h="{n(-(TOP_H + hb))}" '
@@ -698,6 +757,7 @@ def frame_xml(cid, name, guid, prefix, hb, comp, bottom, dx, dy, lw, lh, vis="1"
   <layer x="{n(SIDE_W)}" y="{n(-hb)}" w="{n(-(SIDE_W + 22))}" h="{n(hb)}" relaty="1" relatw="1" image="chd.{prefix}.b" move="1"/>
   <layer x="{n(-22)}" y="{n(-hb)}" relatx="1" relaty="1" image="chd.{prefix}.br"/>
   <layer x="{n(-14)}" y="{n(-14)}" w="{n(14)}" h="{n(14)}" relatx="1" relaty="1" resize="bottomright" rectrgn="1"/>
+{rings(hb)}
 {btn("close", -15, 5.5, "sb.close", "CLOSE", tip="Close", relx=True)}
   {holder}
 {bottom}
@@ -715,13 +775,19 @@ def bbtn(id_, i, key, action, tip, hb=30):
     return btn(id_, SIDE_W + 2 + i * 30, -hb + 7, "tb." + key, action, tip=tip, rely=True)
 
 pl_bottom = "\n".join([
-    bbtn("pl.add", 0, "add", "PE_Add", "Add Files to Playlist"),
-    bbtn("pl.rem", 1, "rem", "PE_Rem", "Remove Files from Playlist"),
-    bbtn("pl.sel", 2, "sel", "PE_Sel", "Select Files in Playlist"),
-    bbtn("pl.misc", 3, "misc", "PE_Misc", "Misc Actions"),
-    f'  <layer x="{n(-143)}" y="{n(-23)}" relatx="1" relaty="1" image="chd.pl.info"/>',
-    f'  <text id="PLTime" display="PE_Info" x="{n(-159)}" y="{n(-18)}" w="{n(120)}" h="{n(SH)}" relatx="1" relaty="1" font="chd.smallnum" fontsize="{n(SH)}" align="center" valign="top" color="chd.text" ghost="1"/>',
-    btn("pl.list", -52, -23, "tb.list", "PE_List", tip="Manage Playlist", relx=True, rely=True),
+    btn("pl.add", SIDE_W + 1, -PL_HB + 8, "tp.add", "PE_Add", tip="Add Files to Playlist", rely=True),
+    btn("pl.rem", SIDE_W + 28, -PL_HB + 8, "tp.rem", "PE_Rem", tip="Remove Files from Playlist", rely=True),
+    btn("pl.sel", SIDE_W + 55, -PL_HB + 8, "tp.sel", "PE_Sel", tip="Select Files in Playlist", rely=True),
+    btn("pl.misc", SIDE_W + 82, -PL_HB + 8, "tp.misc", "PE_Misc", tip="Misc Actions", rely=True),
+    # right block: total-time box, mini transport + elapsed box, LIST OPTS
+    f'  <layer x="{n(-142)}" y="{n(-35)}" relatx="1" relaty="1" image="chd.pl.timebox"/>',
+    f'  <text id="PLTime" display="PE_Info" x="{n(-160)}" y="{n(-32)}" w="{n(122)}" h="{n(SH)}" relatx="1" relaty="1" font="chd.smallnum" fontsize="{n(SH)}" align="center" valign="top" color="chd.text" ghost="1"/>',
+    "\n".join(btn(f"pl.t{k}", -141 + i * 9.6, -20.5, f"pt.{k}", a_, tip=t_, relx=True, rely=True)
+              for i, (k, a_, t_) in enumerate((("prev", "PREV", "Previous"), ("play", "PLAY", "Play"), ("pause", "PAUSE", "Pause"),
+                                               ("stop", "STOP", "Stop"), ("next", "NEXT", "Next"), ("eject", "EJECT", "Open file(s)")))),
+    f'  <layer x="{n(-82)}" y="{n(-21.5)}" relatx="1" relaty="1" image="chd.pl.smallbox"/>',
+    f'  <text id="pltimer" display="time" x="{n(-87)}" y="{n(-19)}" w="{n(40)}" h="{n(SH)}" relatx="1" relaty="1" font="chd.smallnum" fontsize="{n(SH)}" align="center" valign="top" color="chd.text" ghost="1"/>',
+    btn("pl.list", -47, -33, "tp.list", "PE_List", tip="Manage Playlist", relx=True, rely=True),
 ])
 vid_bottom = "\n".join([
     bbtn("vid.fs", 0, "full", "VID_FS", "Fullscreen"),
@@ -737,8 +803,8 @@ vis_bottom = "\n".join([
     bbtn("vis.menu", 3, "menu", "Vis_Menu", "Options"),
 ])
 w("xml/windows.xml", STREAK_DEFS +
-  frame_xml("Pledit", "Playlist Editor", PLG, "pl", 30, "", pl_bottom, 0, 232, 275, 232,
-              holder=(f'<windowholder id="chd.pl.holder" x="{n(SIDE_W)}" y="{n(TOP_H)}" w="{n(-2 * SIDE_W)}" h="{n(-(TOP_H + 30))}" '
+  frame_xml("Pledit", "Playlist Editor", PLG, "pl", PL_HB, "", pl_bottom, 0, 232, 275, 232,
+              holder=(f'<windowholder id="chd.pl.holder" x="{n(SIDE_W)}" y="{n(TOP_H)}" w="{n(-2 * SIDE_W)}" h="{n(-(TOP_H + PL_HB))}" '
                       f'relatw="1" relath="1" autofocus="0" wantfocus="0" autoclose="1" autoopen="1" autoavailable="1" '
                       f'hold="guid:{PLG.lower()}"/>'))
   + frame_xml("MLibrary", "Media Library", "{6B0EDF80-C9A5-11D3-9F26-00C04F39FFC6}", "ml", 12,
@@ -752,7 +818,7 @@ w("skin.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <WasabiXML version="1.35">
 
   <skininfo>
-    <version>1.24</version>
+    <version>1.25</version>
     <name>{NAME}</name>
     <comment>The Classic Winamp layout redrawn at {S}x for high-resolution displays ({round(275 * S)}x{round(116 * S)} main window).</comment>
     <author>Claude</author>
@@ -834,16 +900,28 @@ paste(pv, "pl.tl", 0, oy); tile("pl.t", 8 * S, oy * S, (275 - 32) * S, TOP_H * S
 _ft = ImageFont.truetype(FONT, round(8.4 * S)); _tw = _ft.getlength("WINAMP PLAYLIST"); _tx = (W - _tw) / 2
 tile("streak", 5 * S, oy * S, round(_tx) - 10 * S, TOP_H * S); tile("streak", round(_tx + _tw) + 5 * S, oy * S, W - 22 * S - round(_tx + _tw) - 5 * S, TOP_H * S)
 ImageDraw.Draw(pv).text((_tx, (oy + TOP_H / 2 + 0.3) * S), "WINAMP PLAYLIST", font=_ft, fill=TTEXT, anchor="lm")
-tile("pl.l", 0, (oy + TOP_H) * S, SIDE_W * S, (232 - TOP_H - 30) * S); tile("pl.r", (275 - SIDE_W) * S, (oy + TOP_H) * S, SIDE_W * S, (232 - TOP_H - 30) * S)
-paste(pv, "pl.bl", 0, oy + 202); tile("pl.b", SIDE_W * S, (oy + 202) * S, (275 - SIDE_W - 22) * S, 30 * S); paste(pv, "pl.br", 253, oy + 202)
+_by = 232 - PL_HB
+tile("pl.l", 0, (oy + TOP_H) * S, SIDE_W * S, (_by - TOP_H) * S); tile("pl.r", (275 - SIDE_W) * S, (oy + TOP_H) * S, SIDE_W * S, (_by - TOP_H) * S)
+paste(pv, "pl.bl", 0, oy + _by); tile("pl.b", SIDE_W * S, (oy + _by) * S, (275 - SIDE_W - 22) * S, PL_HB * S); paste(pv, "pl.br", 253, oy + _by)
+def _ring(x0, y0, x1, y1, col):
+    dd = ImageDraw.Draw(pv); t_ = max(1, round(0.75 * S))
+    X0, Y0, X1, Y1 = round(x0 * S), round(y0 * S), round(x1 * S), round(y1 * S)
+    dd.rectangle([X0, Y0, X1 + t_ - 1, Y0 + t_ - 1], fill=col); dd.rectangle([X0, Y1, X1 + t_ - 1, Y1 + t_ - 1], fill=col)
+    dd.rectangle([X0, Y0, X0 + t_ - 1, Y1 + t_ - 1], fill=col); dd.rectangle([X1, Y0, X1 + t_ - 1, Y1 + t_ - 1], fill=col)
+_ring(1.5, oy + 1.5, 275 - 2.25, oy + 232 - 2.25, LO); _ring(2.25, oy + 2.25, 275 - 3, oy + 232 - 3, HI)
+_ring(SIDE_W - 2.6, oy + TOP_H - 2.6, 275 - SIDE_W + 2.6 - 0.75, oy + _by + 2.6 - 0.75, HI)
+_ring(SIDE_W - 1.6, oy + TOP_H - 1.6, 275 - SIDE_W + 1.6 - 0.75, oy + _by + 1.6 - 0.75, LO)
 paste(pv, "sb.close", 260, oy + 5.5)
 for i, k_ in enumerate(("add", "rem", "sel", "misc")):
-    paste(pv, "tb." + k_, SIDE_W + 2 + i * 30, oy + 209)
-paste(pv, "pl.info", 132, oy + 209); paste(pv, "tb.list", 223, oy + 209)
-_pn = I("smallnum"); _t = "0:05/12:31"; _x = 176 - len(_t) * SW / 2
+    paste(pv, "tp." + k_, SIDE_W + 1 + i * 27, oy + 232 - PL_HB + 8)
+paste(pv, "pl.timebox", 275 - 142, oy + 232 - 35); paste(pv, "tp.list", 275 - 47, oy + 232 - 33)
+for i, k_ in enumerate(("prev", "play", "pause", "stop", "next", "eject")):
+    paste(pv, "pt." + k_, 275 - 141 + i * 9.6, oy + 232 - 20.5)
+paste(pv, "pl.smallbox", 275 - 82, oy + 232 - 21.5)
+_pn = I("smallnum"); _t = "0:05/12:31"; _x = 275 - 99 - len(_t) * SW / 2
 for _ch in _t:
     _i = {":": 12, "/": 21}.get(_ch); _i = int(_ch) if _i is None else _i
-    pv.alpha_composite(_pn.crop((_i * SW * S, SH * S, (_i + 1) * SW * S, 2 * SH * S)), (round(_x * S), round((oy + 214) * S))); _x += SW
+    pv.alpha_composite(_pn.crop((_i * SW * S, SH * S, (_i + 1) * SW * S, 2 * SH * S)), (round(_x * S), round((oy + 232 - 32) * S))); _x += SW
 rows = ["1. DJ Mike Llama - Llama Whippin' Intro", "2. Second Track - In The Playlist", "3. Third Track - Another One"]
 for i, r in enumerate(rows):
     yy = (oy + TOP_H + 3 + i * 11) * S
