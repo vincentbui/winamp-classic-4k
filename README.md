@@ -81,7 +81,7 @@ Everything — bitmaps, XML and packaging — is produced by the single script [
 - **Short titles still scroll.** The song ticker gets a large negative right padding, so Winamp treats every title as wider than the box and keeps it moving.
 - **Resizable windows need a region.** A layout with no background image has an empty window region; each frame sits in a group with `background` + `sysregion="1"`, otherwise the window exists but is invisible.
 - **Bitmap-font text is clipped if the text box is not wider than the text**, so the kbps / kHz / playlist-time boxes are deliberately oversized and positioned by measurement.
-- **Fractional scales.** At sizes like 1.5× every shape is snapped to whole output pixels and drawn on a canvas that is an exact multiple of the output size, so 1 px lines and digits stay crisp instead of being smeared across two pixels.
+- **Fractional scales.** Bitmap fonts are rendered onto an exact whole-pixel cell grid at every scale, so 1.5× digits stay aligned.
 
 ## Third-party files
 

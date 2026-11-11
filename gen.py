@@ -77,63 +77,45 @@ def rgb(t): return ",".join(map(str, t))
 
 IMAGES = {}   # id -> (file, w, h) in classic units
 
-SNAP = S != int(S)   # fractional scales: draw on an exact device-pixel grid so 1 px details stay crisp
-
 class Cv:
     def __init__(s, w, h, bg=(0, 0, 0, 0)):
         s.w, s.h = w, h
-        if SNAP:
-            # canvas is exactly (output pixels x AA), so the final downscale is a whole factor
-            s.pw, s.ph = max(1, round(w * S)), max(1, round(h * S))
-            s.kx, s.ky = s.pw * AA / w, s.ph * AA / h
-            s.im = Image.new("RGBA", (s.pw * AA, s.ph * AA), bg)
-        else:
-            s.pw, s.ph = round(w * S), round(h * S)
-            s.kx = s.ky = K
-            s.im = Image.new("RGBA", (round(w * K), round(h * K)), bg)
+        s.im = Image.new("RGBA", (round(w * K), round(h * K)), bg)
         s.d = ImageDraw.Draw(s.im)
-    def _sx(s, v):   # x in canvas units, snapped to whole output pixels when SNAP
-        return round(v * s.kx / AA) * AA if SNAP else round(v * s.kx)
-    def _sy(s, v):
-        return round(v * s.ky / AA) * AA if SNAP else round(v * s.ky)
     def rect(s, x, y, w, h, fill):
         if w <= 0 or h <= 0: return
-        x0, y0, x1, y1 = s._sx(x), s._sy(y), s._sx(x + w), s._sy(y + h)
-        if SNAP:   # never let a thin line vanish: keep at least one output pixel
-            if x1 <= x0: x1 = x0 + AA
-            if y1 <= y0: y1 = y0 + AA
-        s.d.rectangle([x0, y0, x1 - 1, y1 - 1], fill=fill)
+        s.d.rectangle([round(x * K), round(y * K), round((x + w) * K) - 1, round((y + h) * K) - 1], fill=fill)
     def vgrad(s, x, y, w, h, c1, c2):
-        x0, x1 = s._sx(x), s._sx(x + w) - 1
-        y0, y1 = s._sy(y), s._sy(y + h)
+        x0, x1 = round(x * K), round((x + w) * K) - 1
+        y0, y1 = round(y * K), round((y + h) * K)
         n = max(1, y1 - y0 - 1)
         for i, yy in enumerate(range(y0, y1)):
             t = i / n
             s.d.line([x0, yy, x1, yy], fill=tuple(round(a + (b - a) * t) for a, b in zip(c1, c2)))
     def hstops(s, x, y, w, h, stops):
-        x0, x1 = s._sx(x), s._sx(x + w)
-        y0, y1 = s._sy(y), s._sy(y + h) - 1
+        x0, x1 = round(x * K), round((x + w) * K)
+        y0, y1 = round(y * K), round((y + h) * K) - 1
         n = max(1, x1 - x0 - 1)
         for i, xx in enumerate(range(x0, x1)):
             s.d.line([xx, y0, xx, y1], fill=mix(stops, i / n))
     def vstops(s, x, y, w, h, stops):
-        x0, x1 = s._sx(x), s._sx(x + w) - 1
-        y0, y1 = s._sy(y), s._sy(y + h)
+        x0, x1 = round(x * K), round((x + w) * K) - 1
+        y0, y1 = round(y * K), round((y + h) * K)
         n = max(1, y1 - y0 - 1)
         for i, yy in enumerate(range(y0, y1)):
             s.d.line([x0, yy, x1, yy], fill=mix(stops, i / n))
     def poly(s, pts, fill):
-        s.d.polygon([(px * s.kx, py * s.ky) for px, py in pts], fill=fill)
+        s.d.polygon([(px * K, py * K) for px, py in pts], fill=fill)
     def rrect(s, x, y, w, h, r, fill):
-        s.d.rounded_rectangle([x * s.kx, y * s.ky, (x + w) * s.kx - 1, (y + h) * s.ky - 1], radius=r * s.kx, fill=fill)
+        s.d.rounded_rectangle([x * K, y * K, (x + w) * K - 1, (y + h) * K - 1], radius=r * K, fill=fill)
     def ellipse(s, x, y, w, h, fill):
-        s.d.ellipse([x * s.kx, y * s.ky, (x + w) * s.kx - 1, (y + h) * s.ky - 1], fill=fill)
+        s.d.ellipse([x * K, y * K, (x + w) * K - 1, (y + h) * K - 1], fill=fill)
     def line(s, x0, y0, x1, y1, fill, t=1.0):
-        s.d.line([x0 * s.kx, y0 * s.ky, x1 * s.kx, y1 * s.ky], fill=fill, width=max(1, round(t * s.kx)))
+        s.d.line([x0 * K, y0 * K, x1 * K, y1 * K], fill=fill, width=max(1, round(t * K)))
     def text(s, x, y, txt, size, fill, anchor="lt"):
-        s.d.text((x * s.kx, y * s.ky), txt, font=font(size), fill=fill, anchor=anchor)
+        s.d.text((x * K, y * K), txt, font=font(size), fill=fill, anchor=anchor)
     def tw(s, txt, size):
-        return font(size).getlength(txt) / s.kx
+        return font(size).getlength(txt) / K
     def raised(s, x, y, w, h, c1, c2, hi=BHI, lo=BLO, t=0.75, border=EDGE, bt=0.5):
         if border:
             s.rect(x, y, w, h, border); x += bt; y += bt; w -= 2 * bt; h -= 2 * bt
@@ -145,10 +127,7 @@ class Cv:
         s.rect(x - t, y - t, w + t, h + t, LO)
         s.rect(x, y, w, h, fill)
     def save(s, key, size=None):
-        if SNAP and size is None:
-            im = s.im.reduce(AA)   # exact box downscale: pixel-aligned shapes stay sharp
-        else:
-            im = s.im.resize(size or (s.pw, s.ph), Image.LANCZOS)
+        im = s.im.resize(size or (round(s.w * S), round(s.h * S)), Image.LANCZOS)
         fn = key + ".png"
         im.save(os.path.join(IMG, fn), optimize=True)
         IMAGES[key] = (fn, s.w, s.h, im)
