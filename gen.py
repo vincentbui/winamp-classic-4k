@@ -2,7 +2,7 @@
 """Classic HD - generator for a Winamp freeform (.wal) skin that recreates the
 Classic 275x116 layout with natively drawn hi-res artwork.
 usage: gen.py <scale> <outdir> [default|purple]"""
-import os, sys, zipfile, shutil
+import os, re, sys, zipfile, shutil
 from PIL import Image, ImageDraw, ImageFont
 
 S = float(sys.argv[1])
@@ -436,6 +436,7 @@ def gold_transport():
 
 def misc():
     c = Cv(8, 8, (0, 0, 0, 255)); c.save("black")
+    c = Cv(80, 80, (0, 0, 0, 255)); c.text(40, 36, "NO", 9, LABEL, "mm"); c.text(40, 46, "COVER", 9, LABEL, "mm"); c.save("art.none")
     c = Cv(88, 16); c.inset(1, 1, 86, 14); c.save("pl.info")
     c = Cv(90, 12); c.inset(1, 1, 88, 10); c.save("pl.timebox")
     c = Cv(30, 11); c.inset(1, 1, 28, 9); c.save("pl.smallbox")
@@ -511,7 +512,21 @@ def channels():
         c = Cv(56, 10)
         c.text(0, 5.2, "mono", 6.4, m, "lm"); c.text(24, 5.2, "stereo", 6.4, st, "lm")
         c.save("ch." + key)
-main_bg(); shade_bg(); transport(); thumbs(); status(); numfont(); plnum(); smallnum(); channels(); eq_bg(); misc()
+CLUTTER = {"O": ("MENU:WA5:Options", None, "Options"), "A": ("TOGGLE", "chd.albumart", "Album Art window"),
+           "I": ("TRACKINFO", None, "File info"), "D": ("TOGGLE", "guid:{6B0EDF80-C9A5-11D3-9F26-00C04F39FFC6}", "Media Library"), "V": ("TOGGLE", "guid:{0000000A-000C-0010-FF7B-01014263450C}", "Visualization window")}
+def clutter_letters():
+    """O-A-I-D-V as buttons: a crop of the panel (looks unchanged) plus a green hover copy.
+    D (double size in Classic) has no Modern equivalent, so it toggles the Media Library."""
+    bg = IMAGES["main.bg"][3]
+    for i, ch in enumerate("OAIDV"):
+        if ch not in CLUTTER: continue
+        bx, by, bw, bh = 10.2, 26.5 + i * 8.2 - 3.8, 9.0, 7.6
+        im = bg.crop(tuple(round(v * S) for v in (bx, by, bx + bw, by + bh)))
+        fn = f"clut.{ch}.png"; im.save(os.path.join(IMG, fn), optimize=True)
+        IMAGES[f"clut.{ch}"] = (fn, bw, bh, im)
+        c = Cv(bw, bh); c.im.paste(im.resize(c.im.size, Image.LANCZOS))
+        c.text(14.5 - bx, 3.8, ch, 5.2, GREEN, "mm"); c.save(f"clut.{ch}.h")
+main_bg(); clutter_letters(); shade_bg(); transport(); thumbs(); status(); numfont(); plnum(); smallnum(); channels(); eq_bg(); misc()
 bar_mask("mask.vol", 107.6, 60.6, 62.8, 4.3, 2.1); bar_mask("mask.bal", 180.6, 60.6, 33.8, 4.3, 2.1)
 for st_key, lab, w in (("eq.on", "ON", 26), ("eq.auto", "AUTO", 34)):
     led_button(st_key, w, 12, lab, 6)
@@ -527,6 +542,7 @@ gold_transport()
 frame("ml", "WINAMP LIBRARY", 12)
 frame("vid", "WINAMP VIDEO", 30)
 frame("vis", "VISUALIZATION", 30)
+frame("art", "ALBUM ART", 12)
 
 # ---------------------------------------------------------------- XML
 def w(path, txt):
@@ -660,6 +676,7 @@ main = songinfo_def + fill_group("chd.volfill", "VOLUME", None, 62.8, 4.3, "fill
 {tgl("shuffle", 164, 89.5, "btn.shuffle", PLG + ";Shuffle", "Toggle Shuffle")}
 {tgl("repeat", 210, 89.5, "btn.repeat", PLG + ";Repeat", "Toggle Repeat")}
 {btn("about", 255, 89.5, "btn.bolt", "TOGGLE", "guid:{{D6201408-476A-4308-BF1B-7BACA1124B12}}", "About Winamp")}
+  @@ARTSWITCH@@
 </layout>
 
 <layout id="shade" background="chd.shade.bg" droptarget="pldr">
@@ -680,6 +697,23 @@ main = songinfo_def + fill_group("chd.volfill", "VOLUME", None, 62.8, 4.3, "fill
 
 </container>
 """
+_clut = "\n".join(
+    f'  <button id="chd.clut.{ch}" action="{act}"{f" param=\'{prm}\'" if prm else ""} x="{n(10.2)}" y="{n(26.5 + i * 8.2 - 3.8)}" '
+    f'image="chd.clut.{ch}" hoverImage="chd.clut.{ch}.h" downImage="chd.clut.{ch}.h" tooltip="{tip}"/>'
+    for i, ch in enumerate("OAIDV") if ch in CLUTTER for act, prm, tip in [CLUTTER[ch]])
+def _clut_btn(i, ch, act, prm, tip):
+    x, y = n(10.2), n(26.5 + i * 8.2 - 3.8)
+    if act.startswith("MENU:"):   # a Wasabi <Menu> pops up one of Winamp's own menus
+        return (f'  <layer id="chd.clut.{ch}.n" x="{x}" y="{y}" image="chd.clut.{ch}"/>\n'
+                f'  <layer id="chd.clut.{ch}.hv" x="{x}" y="{y}" image="chd.clut.{ch}.h" visible="0"/>\n'
+                f'  <layer id="chd.clut.{ch}.dn" x="{x}" y="{y}" image="chd.clut.{ch}.h" visible="0"/>\n'
+                f'  <Menu id="chd.clut.{ch}.menu" x="{x}" y="{y}" w="{n(9.0)}" h="{n(7.6)}" menu="{act[5:]}" '
+                f'normal="chd.clut.{ch}.n" hover="chd.clut.{ch}.hv" down="chd.clut.{ch}.dn" tooltip="{tip}"/>')
+    p = f' param="{prm}"' if prm else ""
+    return (f'  <button id="chd.clut.{ch}" action="{act}"{p} x="{x}" y="{y}" '
+            f'image="chd.clut.{ch}" hoverImage="chd.clut.{ch}.h" downImage="chd.clut.{ch}.h" tooltip="{tip}"/>')
+_clut = "\n".join(_clut_btn(i, ch, *CLUTTER[ch]) for i, ch in enumerate("OAIDV") if ch in CLUTTER)
+main = main.replace("  @@ARTSWITCH@@", _clut)
 w("xml/player.xml", main)
 
 eqs = "\n".join(slider("preamp" if i == 0 else f"eq{i}", x + 1.5, 38, 11, 63, "eq", "EQ_BAND",
@@ -763,7 +797,7 @@ def frame_xml(cid, name, guid, prefix, hb, comp, bottom, dx, dy, lw, lh, vis="1"
 {bottom}
 </groupdef>
 
-<container id="{cid}" name="{name}" dynamic="1" component="guid:{guid}" default_x="{n(dx)}" default_y="{n(dy)}" default_visible="{vis}">
+<container id="{cid}" name="{name}"{f' dynamic="1" component="guid:{guid}"' if guid else ''} default_x="{n(dx)}" default_y="{n(dy)}" default_visible="{vis}">
 <layout id="normal" minimum_w="{n(275)}" minimum_h="{n(116)}" w="{n(lw)}" h="{n(lh)}">
   <group id="chd.frame.{prefix}" x="0" y="0" w="0" h="0" relatw="1" relath="1" sysregion="1"/>
 </layout>
@@ -812,13 +846,16 @@ w("xml/windows.xml", STREAK_DEFS +
   + frame_xml("Video", "Video", "{F0816D7B-FFFC-4343-80F2-E8199AA15CC3}", "vid", 30,
               'autoopen="1" autoclose="1" param="{F0816D7B-FFFC-4343-80F2-E8199AA15CC3}"', vid_bottom, 275, 0, 320, 260, vis="0")
   + frame_xml("AVS", "Visualizations", "{0000000A-000C-0010-FF7B-01014263450C}", "vis", 30,
-              'autoopen="1" autoclose="1" param="{0000000A-000C-0010-FF7B-01014263450C}"', vis_bottom, 275, 0, 320, 260, vis="0"))
+              'autoopen="1" autoclose="1" param="{0000000A-000C-0010-FF7B-01014263450C}"', vis_bottom, 275, 0, 320, 260, vis="0")
+  + frame_xml("chd.albumart", "Album Art", None, "art", 12, "", "", 275, 0, 200, 220, vis="0",
+              holder=f'<AlbumArt id="chd.albumart.img" x="{n(SIDE_W)}" y="{n(TOP_H)}" w="{n(-2 * SIDE_W)}" h="{n(-(TOP_H + 12))}" '
+                     f'relatw="1" relath="1" notfoundImage="chd.art.none"/>'))
 
 w("skin.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <WasabiXML version="1.35">
 
   <skininfo>
-    <version>1.25</version>
+    <version>1.26</version>
     <name>{NAME}</name>
     <comment>The Classic Winamp layout redrawn at {S}x for high-resolution displays ({round(275 * S)}x{round(116 * S)} main window).</comment>
     <author>Claude</author>

@@ -10,7 +10,7 @@ Classic skins (`.wsz`) are locked to a 275×116 px main window and can only be p
 
 ## Downloads
 
-Ready-to-install builds are in [`dist/`](dist/) (skin version 1.25). Each size comes in both themes:
+Ready-to-install builds are in [`dist/`](dist/) (skin version 1.26). Each size comes in both themes:
 
 | Size | Default theme | Purple theme | Main window | Suggested for |
 |---|---|---|---|---|
@@ -34,6 +34,8 @@ Developed on **Winamp 5.8 (build 3660)** and tested on **Winamp 5.9.2** on Windo
 ## What's in the skin
 
 - **Main window** – Classic layout: clock, visualizer, scrolling song title, kbps / kHz, mono / stereo, volume, balance, seek bar, transport, shuffle / repeat, EQ / PL toggles.
+- **O-A-I-D-V buttons** – O: Winamp Options menu, A: Album Art window, I: file info, D: Media Library (Classic's double size has no Modern equivalent), V: Visualization window. Letters light up green on hover.
+- **Album Art window** – resizable frame showing the current track's cover (embedded art or `cover.jpg` / `folder.jpg`), "NO COVER" otherwise.
 - **Windowshade mode** – `WINAMP` label, a small spectrum visualizer, pixel-digit clock and transport buttons.
 - **Equalizer** – preamp + 10 bands, ON / AUTO / PRESETS.
 - **Playlist** – resizable, Classic bottom corners: tabbed ADD / REM / SEL / MISC buttons, LIST OPTS, time readout, gold mini transport, double frame rings around the window and the list, centred title.
@@ -51,7 +53,7 @@ Classic details that were reproduced:
 ## Known gaps
 
 - No track number (`1.`) in front of the song title.
-- No EQ curve graph; the O-A-I-D-V letters are decorative.
+- No EQ curve graph.
 - Playlist has no windowshade mode.
 - The playlist's track list is drawn by Winamp itself; its font size is set in **Preferences → Playlist**, not by the skin.
 - The playlist scrollbar is Winamp's own (no gold Classic thumb). Winamp 5.9 ignores scrollbar images from the skin there, even with *Use freeform scrollbars* enabled.
